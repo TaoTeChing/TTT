@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>websocket client test</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style type="text/css">
+            body {
+
+            }
+
+            #main {
+                margin: 0 auto;
+                width: 600px;
+            }
+
+            #messagebox {
+                margin: 30px auto;
+                padding: 10px 10px;
+                background-color: antiquewhite;
+                border-right: 12px;
+                width:600px;
+                height:200px;
+                overflow:scroll ;
+                font-size: 12px;
+            }
+
+            #tradeTable {
+                margin: 30px auto;
+                padding: 10px 10px;
+                width:600px;
+            }
+            .trow div {
+                display:inline-block;
+                border:1px solid #808080;
+                border-radius: 4px;
+                text-align: center;
+                width: 80px;
+                height: 1em;
+                padding: 4px 5px;
+                margin: 4px 5px;
+            }
+
+            .trow div em {
+                /*background-color: #800080;*/
+
+                -webkit-animation: highlight 1s;
+                -moz-animation:  highlight 1s;
+                -o-animation:  highlight 1s;
+            }
+
+            @-webkit-keyframes highlight {
+                /*0% {color: green;}*/
+                /*50% { color: yellow}*/
+                /*100% {color: green}*/
+                0% {background-color: #ffffff;}
+                50% {background-color: #00cd00}
+                100% {background-color: #ffffff;}
+            }
+
+            .trow .td {
+                transition: border-color, 1.5s;
+            }
+
+
+        </style>
+    </head>
+    <body>
+        <div id="main">
+
+            <h1>Thunder Trade Table v0.0.2</h1>
+
+            <div id="tradeTable">
+                <div class="trow">
+                    <div class="td" id="name">Name</div>
+                    <div class="td" id="last">Last</div>
+                    <div class="td" id="sell">Sell</div>
+                    <div class="td" id="buy">Buy</div>
+                </div>
+                <div class="trow">
+                    <div class="td" id="huobi_name">huobi</div>
+                    <div class="td" id="huobi_last"> - </div>
+                    <div class="td" id="huobi_sell"> - </div>
+                    <div class="td" id="huobi_buy"> - </div>
+                </div>
+                <div class="trow">
+                    <div class="td" id="btcchina_name">btcchina</div>
+                    <div class="td" id="btcchina_last"> - </div>
+                    <div class="td" id="btcchina_sell"> - </div>
+                    <div class="td" id="btcchina_buy"> - </div>
+                </div>
+                <div class="trow">
+                    <div class="td" id="okcoin_name">okcoin</div>
+                    <div class="td" id="okcoin_last"> - </div>
+                    <div class="td" id="okcoin_sell"> - </div>
+                    <div class="td" id="okcoin_buy"> - </div>
+                </div>
+                <div class="trow">
+                    <div class="td" id="chbtc_name">chbtc</div>
+                    <div class="td" id="chbtc_last"> - </div>
+                    <div class="td" id="chbtc_sell"> - </div>
+                    <div class="td" id="chbtc_buy"> - </div>
+                </div>
+                <div class="trow">
+                    <div class="td" id="bitstamp_name">bitstamp</div>
+                    <div class="td" id="bitstamp_last"> - </div>
+                    <div class="td" id="bitstamp_sell"> - </div>
+                    <div class="td" id="bitstamp_buy"> - </div>
+                </div>
+                <div class="trow">
+                    <div class="td" id="btce_name">btce</div>
+                    <div class="td" id="btce_last"> - </div>
+                    <div class="td" id="btce_sell"> - </div>
+                    <div class="td" id="btce_buy"> - </div>
+                </div>
+            </div>
+
+            <p>console info:</p>
+            <div id="messagebox">Connecting to Server ...</div>
+
+            <!--<p>资金仓位显示</p>-->
+
+        </div>
+
+        <script>
+//            var  wsServer = 'ws://127.0.0.1:9443';
+            var  wsServer = 'ws://120.24.89.142:9443';
+            var  websocket = new WebSocket(wsServer); 
+            websocket.onopen = function (evt) { onOpen(evt); };
+            websocket.onclose = function (evt) { onClose(evt); }; 
+            websocket.onmessage = function (evt) { onMessage(evt); }; 
+            websocket.onerror = function (evt) { onError(evt); };
+            function onOpen(evt) {
+                websocket.send("hello from wsc1");
+                console.log("Connected to WebSocket server :"+ wsServer);
+
+                checkOpportunity();
+            } 
+            function onClose(evt) { 
+                console.log("Disconnected"); 
+            } 
+            function onMessage(evt) { 
+                console.log('Retrieved data from server: ' + evt.data);
+
+                var jsondata = eval("("+ evt.data +")");
+                if(!jsondata.key) return ;
+
+                $("messagebox").innerHTML += "<p>"+
+                jsondata.time+ ":["+jsondata.key + "]" + jsondata.ticker.last+ ", " + jsondata.ticker.sell + ", "+ jsondata.ticker.buy+
+                "</p>";
+
+                $("messagebox").scrollTop =  document.getElementById("messagebox").scrollHeight;
+
+                var gridNameArr = ['last', 'sell', 'buy'];
+
+                for (var i in gridNameArr) {
+                    if($(jsondata.key+"_"+gridNameArr[i]).innerHTML !==
+                            "<em>"+jsondata.ticker[gridNameArr[i]]+"</em>") {
+                        $(jsondata.key+"_"+gridNameArr[i]).innerHTML =
+                                "<em>"+jsondata.ticker[gridNameArr[i]]+"</em>";
+                    }
+                }
+
+
+                //检测交易机会，连线
+                checkOpportunity();
+
+            } 
+            function onError(evt) { 
+                console.log('Error occured: ' + evt.data); 
+            }
+
+            function cinfo(msg, color) {
+                var cc = color || 'black';
+                document.getElementById("messagebox").innerHTML += "<p style='color:"+cc+";'>"+msg+"</p>";
+            }
+
+            function $(p_id) {
+                return document.getElementById(p_id);
+            }
+
+
+            //检测交易机会
+            function checkOpportunity() {
+
+                var buyArr = [];
+                var sellArr = [];
+
+                var resArr = {};
+                resArr.buy = {};
+                resArr.sell = {};
+
+                var allowDiff = 0;
+
+                var tmpArr = $('tradeTable').getElementsByClassName('td');
+                for(var i in tmpArr) {
+//                    console.log(tmpArr[i].id);
+
+                    var pattern = new RegExp("^(.+)_(.+)$");
+                    var matchArr = pattern.exec(tmpArr[i].id);
+
+                    if(matchArr && matchArr[2] == 'buy') {
+                        resArr.buy[matchArr[1]] = tmpArr[i].innerHTML.replace(/<[^>].*?>/g,'');
+                    }
+
+                    if(matchArr && matchArr[2] == 'sell') {
+                        resArr.sell[matchArr[1]] = tmpArr[i].innerHTML.replace(/<[^>].*?>/g,'');
+                    }
+
+                }
+
+//                console.log(resArr);
+
+                //简易逻辑：获取最高买单与最低卖单进行匹配
+                console.log("max:"+maxInObj(resArr.buy));
+                console.log("min:"+minInObj(resArr.sell));
+
+                var maxBuy = maxInObj(resArr.buy);
+                var minSell = minInObj(resArr.sell);
+
+                if(maxBuy.val - allowDiff > minSell.val) {
+
+                    cinfo('最佳价差：' + minSell.key + '买入价' + minSell.val +
+                    " | " + maxBuy.key + '卖出价' + maxBuy.val + ' 差价：'+
+                    ( maxBuy.val - allowDiff - minSell.val), 'red');
+
+                    divBorderBlink(maxBuy.key+'_buy');
+                    divBorderBlink(minSell.key+'_sell');
+                }
+
+
+
+
+                for(var i in resArr.buy) {
+                    for(var j in resArr.sell) {
+                        if( (resArr.buy[i] - allowDiff) > resArr.sell[j]) {
+                            
+                            console.log(resArr.buy[i] +" | "+ resArr.sell[j]);
+                            cinfo('发现价差：' + i + '买入价' + resArr.sell[j] +
+                            " | " + j + '卖出' + resArr.buy[i] + ' 差价：'+
+                            ( (resArr.buy[i] - allowDiff) - resArr.sell[j]), 'red');
+
+//                            divBorderBlink(i+'_buy');
+//                            divBorderBlink(j+'_sell');
+
+                        }
+                    }
+                }
+
+            }
+
+            function maxInObj(obj) {
+
+                var tmp = {};
+                var k =0;
+                for(var i in obj) {
+//                    if (typeof obj[i] !== 'number') continue;
+                    if(k == 0){
+                        tmp.key = i;
+                        tmp.val = obj[i];
+                    }
+
+                    if(k>0) {
+                        if(obj[i] > tmp.val) {
+                            tmp.key = i;
+                            tmp.val = obj[i];
+                        }
+                    }
+                    k++;
+                }
+                console.log("max::"+tmp.key+"|"+tmp.val);
+                return tmp;
+
+            }
+
+            function minInObj(obj) {
+
+                var tmp = {};
+                var k =0;
+                for(var i in obj) {
+//                    if (typeof obj[i] !== 'number') continue;
+                    if(k == 0){
+                        tmp.key = i;
+                        tmp.val = obj[i];
+                    }
+
+                    if(k>0) {
+                        if(obj[i] < tmp.val) {
+                            tmp.key = i;
+                            tmp.val = obj[i];
+                        }
+                    }
+                    k++;
+                }
+                console.log("min::"+tmp.key+"|"+tmp.val);
+                return tmp;
+
+            }
+
+
+            function isNumber(val) {
+                return typeof val === 'number' && isFinite(val);
+            }
+
+            function divBorderBlink(id){
+                $(id).style.borderColor = 'red';
+                setTimeout(function () {
+                    $(id).style.borderColor = 'black';
+                },1000);
+            }
+            
+            
+        </script>
+    </body>
+</html>
