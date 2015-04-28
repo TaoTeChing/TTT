@@ -20,4 +20,4 @@ php ./main/websocket_server.php
 
 运行截图如下：
 
-![demopic](www.logix.top/assets/ttt_demo.png "TTT demo screenshot.")
+![demopic](http://www.logix.top/assets/ttt_demo.png "TTT demo screenshot.")
